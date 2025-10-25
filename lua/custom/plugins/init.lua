@@ -5,4 +5,13 @@
 
 require 'custom.plugins.java'
 
+-- Keymap: Run current Python file in a split terminal
+vim.keymap.set('n', '<leader>r', function()
+  local file = vim.fn.expand '%'
+  if vim.bo.filetype == 'python' then
+    vim.cmd('split | terminal python3 ' .. file)
+    vim.cmd 'stopinsert'
+  end
+end, { desc = 'Run current Python file' })
+
 return {}
