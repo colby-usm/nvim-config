@@ -5,14 +5,31 @@
 
 require 'custom.plugins.java'
 
--- Keymap: Run current Python file in a split terminal
-vim.keymap.set('n', '<leader>r', function()
-  local file = vim.fn.expand '%'
+-- ─────────────────────────────────────────────
+-- Python run helpers
+-- ─────────────────────────────────────────────
+
+-- Run current Python file directly (like `python3 file.py`)
+vim.keymap.set('n', '<leader>pr', function()
   if vim.bo.filetype == 'python' then
-    vim.cmd('split | terminal python3 ' .. file)
+    local file = vim.fn.expand '%:p' -- full path to current file
+    local cwd = vim.fn.getcwd() -- current working directory
+    vim.cmd('split | terminal PYTHONPATH=' .. cwd .. ' python3 ' .. file)
     vim.cmd 'stopinsert'
   end
-end, { desc = 'Run current Python file' })
+end, { desc = 'Run current Python file directly' })
+
+-- Run current Python file as a module (like `python3 -m package.module`)
+vim.keymap.set('n', '<leader>pm', function()
+  if vim.bo.filetype == 'python' then
+    local file = vim.fn.expand '%:p'
+    local cwd = vim.fn.getcwd()
+    local rel = vim.fn.fnamemodify(file, ':~:.') -- relative to CWD
+    local module = rel:gsub('/', '.'):gsub('%.py$', '')
+    vim.cmd('split | terminal cd ' .. cwd .. ' && python3 -m ' .. module)
+    vim.cmd 'stopinsert'
+  end
+end, { desc = 'Run current Python file as module' })
 
 vim.api.nvim_create_user_command('Pylint', function()
   local lint = require 'lint'
