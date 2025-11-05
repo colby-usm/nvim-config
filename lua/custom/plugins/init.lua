@@ -14,4 +14,16 @@ vim.keymap.set('n', '<leader>r', function()
   end
 end, { desc = 'Run current Python file' })
 
+vim.api.nvim_create_user_command('Pylint', function()
+  local lint = require 'lint'
+  print('Python linter cmd:', lint.linters.pylint.cmd)
+end, {})
+
+vim.keymap.set('n', '<leader>dq', function()
+  local dap = require 'dap'
+  local dapui = require 'dapui'
+  dap.terminate { terminateAll = true } -- stop all active debug sessions
+  dapui.close() -- close UI panels
+end, { desc = 'DAP: Terminate session and close UI' })
+
 return {}

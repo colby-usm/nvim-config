@@ -67,7 +67,7 @@ return {
           end, opts)
 
           -- Debug keymaps (using F-keys to avoid conflicts)
-          vim.keymap.set('n', 'F9>', dap.toggle_breakpoint, opts) -- Toggle breakpoint
+          vim.keymap.set('n', '<F9>', dap.toggle_breakpoint, opts) -- Toggle breakpoint
           vim.keymap.set('n', '<F5>', dap.continue, opts) -- Start/Continue
           vim.keymap.set('n', '<F10>', dap.step_over, opts) -- Step over
           vim.keymap.set('n', '<F11>', dap.step_into, opts) -- Step into
