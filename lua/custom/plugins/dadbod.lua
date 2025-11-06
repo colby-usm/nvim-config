@@ -7,10 +7,15 @@ return {
     'kristijanhusak/vim-dadbod-ui',
     dependencies = { 'vim-dadbod' },
     config = function()
-      -- You can configure UI options here if needed
+      -- UI options
       vim.g.dadbod_ui_auto_execute = 1
       vim.g.dadbod_ui_win_position = 'right'
       vim.g.dadbod_ui_max_height = 30
+
+      -- Map <leader>db to toggle DBUI
+      vim.keymap.set('n', '<leader>db', function()
+        vim.cmd 'DBUIToggle'
+      end, { desc = 'Toggle DBUI' })
     end,
   },
   {

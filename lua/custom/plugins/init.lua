@@ -43,4 +43,5 @@ vim.keymap.set('n', '<leader>dq', function()
   dapui.close() -- close UI panels
 end, { desc = 'DAP: Terminate session and close UI' })
 
+vim.env.PATH = vim.env.PATH .. ':/usr/local/mysql-9.5.0-macos15-arm64/bin'
 return {}
