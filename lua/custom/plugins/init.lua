@@ -22,6 +22,7 @@ end, { desc = 'Run current Python file directly' })
 -- Run current Python file as a module (like `python3 -m package.module`)
 vim.keymap.set('n', '<leader>pm', function()
   if vim.bo.filetype == 'python' then
+    vim.cmd 'write'
     local file = vim.fn.expand '%:p'
     local cwd = vim.fn.getcwd()
     local rel = vim.fn.fnamemodify(file, ':~:.') -- relative to CWD
@@ -29,7 +30,7 @@ vim.keymap.set('n', '<leader>pm', function()
     vim.cmd('split | terminal cd ' .. cwd .. ' && python3 -m ' .. module)
     vim.cmd 'stopinsert'
   end
-end, { desc = 'Run current Python file as module' })
+end, { desc = 'Save and run current Python file as module' })
 
 vim.api.nvim_create_user_command('Pylint', function()
   local lint = require 'lint'
@@ -42,6 +43,18 @@ vim.keymap.set('n', '<leader>dq', function()
   dap.terminate { terminateAll = true } -- stop all active debug sessions
   dapui.close() -- close UI panels
 end, { desc = 'DAP: Terminate session and close UI' })
+
+-- Run current Julia file
+vim.keymap.set('n', '<leader>jm', function()
+  if vim.bo.filetype == 'julia' then
+    vim.cmd 'write'
+    local file = vim.fn.expand '%:p'
+    local cwd = vim.fn.getcwd()
+    local rel = vim.fn.fnamemodify(file, ':~:.') -- relative to CWD
+    vim.cmd('split | terminal cd ' .. cwd .. ' && julia ' .. rel)
+    vim.cmd 'stopinsert'
+  end
+end, { desc = 'Save and run current Julia file' })
 
 vim.env.PATH = vim.env.PATH .. ':/usr/local/mysql-9.5.0-macos15-arm64/bin'
 return {}
