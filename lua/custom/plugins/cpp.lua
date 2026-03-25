@@ -1,31 +1,5 @@
 -- ~/.config/nvim/lua/custom/plugins/cpp.lua
 return {
-  -- Treesitter (dependency)
-  {
-    'nvim-treesitter/nvim-treesitter',
-    build = ':TSUpdate',
-    ft = { 'c', 'cpp', 'lua' }, -- load only for these filetypes
-    config = function()
-      require('nvim-treesitter.configs').setup {
-        ensure_installed = { 'cpp', 'c', 'lua' },
-        highlight = { enable = true },
-        indent = { enable = true },
-      }
-    end,
-  },
-
-  -- LSP for C/C++
-  {
-    'neovim/nvim-lspconfig',
-    ft = { 'c', 'cpp' },
-    dependencies = { 'nvim-treesitter/nvim-treesitter' }, -- ensures Treesitter is loaded first
-    opts = {
-      servers = {
-        clangd = {},
-      },
-    },
-  },
-
   -- DAP for C/C++
   {
     'mfussenegger/nvim-dap',
