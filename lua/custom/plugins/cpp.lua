@@ -8,7 +8,7 @@ return {
       local dap = require 'dap'
       dap.adapters.cppdbg = {
         type = 'executable',
-        command = '/opt/homebrew/opt/llvm/bin/lldb-dap',
+	command = vim.fn.exepath("lldb-dap"),
         name = 'lldb',
       }
       dap.configurations.cpp = {

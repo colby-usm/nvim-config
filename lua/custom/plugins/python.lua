@@ -1,110 +1,107 @@
 -- ~/.config/nvim/lua/custom/plugins/python.lua
+
+local function resolve_python()
+  local uv_venv = vim.fn.getcwd() .. '/.venv'
+  if vim.fn.executable(uv_venv .. '/bin/python') == 1 then
+    return uv_venv .. '/bin/python'
+  end
+
+  local conda = os.getenv 'CONDA_PREFIX'
+  if conda and vim.fn.executable(conda .. '/bin/python') == 1 then
+    return conda .. '/bin/python'
+  end
+
+  local venv = os.getenv 'VIRTUAL_ENV'
+  if venv and vim.fn.executable(venv .. '/bin/python') == 1 then
+    return venv .. '/bin/python'
+  end
+
+  local sys = vim.fn.exepath 'python3'
+  return (sys ~= '' and sys) or 'python3'
+end
+
+local function resolve_ruff()
+  local cwd = vim.fn.getcwd()
+  local local_ruff = cwd .. '/.venv/bin/ruff'
+  if vim.fn.executable(local_ruff) == 1 then
+    return local_ruff
+  end
+
+  if vim.fn.executable('ruff') == 1 then
+    return 'ruff'
+  end
+
+  return nil
+end
+
+local function add_python_paths()
+  local python = resolve_python()
+
+  local cmd = python
+    .. [[ -c "import sysconfig;
+paths=sysconfig.get_paths();
+print(paths['stdlib']);
+print(paths['purelib'])"]]
+
+  local handle = io.popen(cmd)
+  if not handle then
+    return
+  end
+
+  local stdlib = handle:read '*l'
+  local site = handle:read '*l'
+  handle:close()
+
+  local paths = { stdlib, site }
+
+  for _, p in ipairs(paths) do
+    if p and #p > 0 then
+      vim.opt.path:append(p)
+      vim.opt.path:append(p .. '/**')
+    end
+  end
+end
+
 return {
-  -- 1️⃣ Python LSP (Pyright)
   {
     'neovim/nvim-lspconfig',
-    ft = { 'python' }, -- only load for Python files
-    opts = {
-      servers = {
-        pyright = {
-          settings = {
-            python = {
-              pythonPath = (os.getenv 'VIRTUAL_ENV' and (os.getenv 'VIRTUAL_ENV' .. '/bin/python')) or 'python3',
-              analysis = {
-                typeCheckingMode = 'off',
-                diagnosticMode = 'openFilesOnly',
-                autoSearchPaths = true,
-                useLibraryCodeForTypes = true,
-              },
+    ft = { 'python' },
+    config = function()
+      local python = resolve_python()
+
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'python',
+        callback = add_python_paths,
+      })
+
+      -- PYRIGHT
+      vim.lsp.config('pyright', {
+        settings = {
+          python = {
+            pythonPath = python,
+            analysis = {
+              typeCheckingMode = 'basic',
+              diagnosticMode = 'openFilesOnly',
+              autoSearchPaths = true,
+              useLibraryCodeForTypes = true,
             },
           },
         },
-      },
-    },
-  },
+      })
 
-  -- 2️⃣ Python DAP
-  {
-    'mfussenegger/nvim-dap-python',
-    ft = { 'python' },
-    dependencies = {
-      'mfussenegger/nvim-dap',
-      'rcarriga/nvim-dap-ui',
-    },
-    config = function()
-      local dap = require 'dap'
-      local dap_python = require 'dap-python'
-      local dapui = require 'dapui'
+      vim.lsp.enable('pyright')
 
-      -- Automatically find a virtual environment
-      local function find_venv(start_path)
-        local handle = io.popen('find "' .. start_path .. '" -type d -name ".venv" -print -quit')
-        if handle then
-          local result = handle:read '*l'
-          handle:close()
-          return result
-        end
+      -- RUFF (FIXED)
+      local ruff_cmd = resolve_ruff()
+      if ruff_cmd then
+        vim.lsp.config('ruff', {
+          cmd = { ruff_cmd, 'server' },
+          filetypes = { 'python' },
+          root_dir = vim.fs.root(0, { 'pyproject.toml', '.git' }) or vim.fn.getcwd(),
+        })
+
+        vim.lsp.enable('ruff')
       end
-
-      local cwd = vim.fn.getcwd()
-      local venv_path = find_venv(cwd) or os.getenv 'VIRTUAL_ENV'
-      local python_path = venv_path and (venv_path .. '/bin/python') or 'python3'
-
-      dap_python.setup(python_path)
-
-      dap.configurations.python = {
-        {
-          type = 'python',
-          request = 'launch',
-          name = 'Launch file',
-          program = '${file}',
-          pythonPath = function()
-            return python_path
-          end,
-          cwd = cwd,
-          console = 'internalConsole',
-          stopOnEntry = false,
-          justMyCode = true,
-          showReturnValue = true,
-          env = { PYTHONPATH = cwd },
-        },
-      }
-
-      dap.defaults.fallback.exception_breakpoints = { 'raised', 'uncaught' }
-
-      -- Auto-open DAP UI
-      dap.listeners.after.event_initialized['dapui_config'] = function()
-        dapui.open()
-      end
-      dap.listeners.before.event_terminated['dapui_config'] = function()
-        dapui.close()
-      end
-      dap.listeners.before.event_exited['dapui_config'] = function()
-        dapui.close()
-      end
-    end,
-  },
-
-  -- 3️⃣ Python run helpers (keymaps)
-  {
-    'nvim-lua/plenary.nvim',
-    ft = { 'python' },
-    config = function()
-      vim.keymap.set('n', '<leader>pr', function()
-        local file = vim.fn.expand '%:p'
-        local cwd = vim.fn.getcwd()
-        vim.cmd('split | terminal PYTHONPATH=' .. cwd .. ' python3 ' .. file)
-        vim.cmd 'stopinsert'
-      end, { desc = 'Run current Python file' })
-
-      vim.keymap.set('n', '<leader>pm', function()
-        local file = vim.fn.expand '%:p'
-        local cwd = vim.fn.getcwd()
-        local rel = vim.fn.fnamemodify(file, ':~:.')
-        local module = rel:gsub('/', '.'):gsub('%.py$', '')
-        vim.cmd('split | terminal cd ' .. cwd .. ' && python3 -m ' .. module)
-        vim.cmd 'stopinsert'
-      end, { desc = 'Run Python file as module' })
     end,
   },
 }
