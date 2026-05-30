@@ -679,7 +679,21 @@ require('lazy').setup({
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
-        -- ruff = {},
+        ruff = {},
+        basedpyright = {
+          settings = {
+            python = {
+              pythonPath = vim.fn.getcwd() .. '/.venv/bin/python',
+            },
+            basedpyright = {
+              analysis = {
+                typeCheckingMode = 'standard',
+                ignore = { '*' },
+              },
+            },
+          },
+        },
+
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -719,26 +733,26 @@ require('lazy').setup({
       --
       -- You can add other tools here that you want Mason to install
       -- for you, so that they are available from within Neovim.
-      local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {
-        'stylua', -- Used to format Lua code
-      })
+      local ensure_installed = { 'stylua', 'clangd', 'lua_ls' } -- only Mason-managed tools
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
-
       require('mason-lspconfig').setup {
-        ensure_installed = { 'pyright', 'lua_ls', 'clangd' },
-        automatic_installation = true,
+        ensure_installed = { 'lua_ls', 'clangd' },
+        automatic_installation = false,
         handlers = {
           function(server_name)
             local server = servers[server_name] or {}
-            -- This handles overriding only values explicitly passed
-            -- by the server configuration above. Useful when disabling
-            -- certain features of an LSP (for example, turning off formatting for ts_ls)
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
             require('lspconfig')[server_name].setup(server)
           end,
         },
       }
+      -- Setup UV-managed LSPs manually
+      for _, name in ipairs { 'basedpyright', 'ruff' } do
+        local server = servers[name] or {}
+        server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
+        vim.lsp.config(name, server)
+        vim.lsp.enable(name)
+      end
     end,
   },
 

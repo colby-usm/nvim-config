@@ -158,10 +158,17 @@ return {
         name = 'Launch file',
         program = '${file}',
         pythonPath = function()
-          local venv = os.getenv 'VIRTUAL_ENV'
-          if venv then
+          -- Check for uv's .venv in project root
+          local venv = vim.fn.getcwd() .. '/.venv'
+          if vim.fn.isdirectory(venv) == 1 then
             return venv .. '/bin/python'
           end
+          -- Fall back to VIRTUAL_ENV env var
+          local env_venv = os.getenv 'VIRTUAL_ENV'
+          if env_venv then
+            return env_venv .. '/bin/python'
+          end
+          -- Last resort
           return 'python3'
         end,
       },
