@@ -679,21 +679,59 @@ require('lazy').setup({
         -- clangd = {},
         -- gopls = {},
         -- pyright = {},
-        ruff = {},
+        ruff = {
+          on_attach = function(client)
+            client.server_capabilities.hoverProvider = false
+            client.server_capabilities.diagnosticProvider = false
+          end,
+        },
         basedpyright = {
+          before_init = function(_, config)
+            local venv = vim.fn.getcwd() .. '/.venv/bin/python'
+            if vim.fn.executable(venv) == 1 then
+              config.settings.python.pythonPath = venv
+            else
+              local env_venv = os.getenv 'VIRTUAL_ENV'
+              if env_venv then
+                config.settings.python.pythonPath = env_venv .. '/bin/python'
+              else
+                config.settings.python.pythonPath = vim.fn.exepath 'python3'
+              end
+            end
+          end,
           settings = {
             python = {
-              pythonPath = vim.fn.getcwd() .. '/.venv/bin/python',
-            },
-            basedpyright = {
-              analysis = {
-                typeCheckingMode = 'standard',
-                ignore = { '*' },
-              },
+              pythonPath = vim.fn.exepath 'python3',
             },
           },
         },
-
+        basedpyright = {
+          before_init = function(_, config)
+            local venv = vim.fn.getcwd() .. '/.venv/bin/python'
+            if vim.fn.executable(venv) == 1 then
+              config.settings.python.pythonPath = venv
+            else
+              local env_venv = os.getenv 'VIRTUAL_ENV'
+              if env_venv then
+                config.settings.python.pythonPath = env_venv .. '/bin/python'
+              else
+                config.settings.python.pythonPath = vim.fn.exepath 'python3'
+              end
+            end
+          end,
+          settings = {
+            basedpyright = {
+              analysis = {
+                autoSearchPaths = true,
+                diagnosticMode = 'openFilesOnly',
+                typeCheckingMode = 'standard',
+              },
+            },
+            python = {
+              pythonPath = vim.fn.exepath 'python3',
+            },
+          },
+        },
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
