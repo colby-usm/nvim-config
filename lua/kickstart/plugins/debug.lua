@@ -92,10 +92,10 @@ return {
 
       -- You'll need to check that you have the required things installed
       -- online, please don't ask me how to install them :)
-      ensure_installed = {
-        -- Update this to ensure that you have the debuggers for the langs you want
-        'delve',
-      },
+      ---ensure_installed = {
+      ---  -- Update this to ensure that you have the debuggers for the langs you want
+      ---  'delve',
+      ---},
     }
 
     -- Dap UI setup
@@ -133,44 +133,58 @@ return {
     -- end
 
     dap.listeners.after.event_initialized['dapui_config'] = dapui.open
-    dap.listeners.before.event_terminated['dapui_config'] = dapui.close
-    dap.listeners.before.event_exited['dapui_config'] = dapui.close
+    -- dap.listeners.before.event_terminated['dapui_config'] = dapui.close
+    -- dap.listeners.before.event_exited['dapui_config'] = dapui.close
 
     -- Install golang specific config
-    require('dap-go').setup {
-      delve = {
-        -- On Windows delve must be run attached or it crashes.
-        -- See https://github.com/leoluz/nvim-dap-go/blob/main/README.md#configuring
-        detached = vim.fn.has 'win32' == 0,
-      },
-    }
+    ---require('dap-go').setup {
+    ---  delve = {
+    ---    -- On Windows delve must be run attached or it crashes.
+    ---    -- See https://github.com/leoluz/nvim-dap-go/blob/main/README.md#configuring
+    ---    detached = vim.fn.has 'win32' == 0,
+    ---  },
+    ---}
 
     -- Python specific config
+    -- Shared Python resolver (used by BOTH adapter + program)
+    local function get_python()
+      -- 1. Project-local uv venv
+      local venv = vim.fn.getcwd() .. '/.venv'
+      if vim.fn.isdirectory(venv) == 1 then
+        local py = venv .. '/bin/python'
+        if vim.fn.executable(py) == 1 then
+          return py
+        end
+      end
+
+      -- 2. VIRTUAL_ENV (activated env)
+      local env_venv = os.getenv 'VIRTUAL_ENV'
+      if env_venv then
+        local py = env_venv .. '/bin/python'
+        if vim.fn.executable(py) == 1 then
+          return py
+        end
+      end
+
+      -- 3. System fallback
+      return vim.fn.exepath 'python3'
+    end
+
+    -- Python adapter (FIXED: no longer hardcoded system python)
     dap.adapters.python = {
       type = 'executable',
-      command = 'python3',
+      command = get_python(),
       args = { '-m', 'debugpy.adapter' },
     }
+
+    -- Python launch configuration
     dap.configurations.python = {
       {
         type = 'python',
         request = 'launch',
         name = 'Launch file',
         program = '${file}',
-        pythonPath = function()
-          -- Check for uv's .venv in project root
-          local venv = vim.fn.getcwd() .. '/.venv'
-          if vim.fn.isdirectory(venv) == 1 then
-            return venv .. '/bin/python'
-          end
-          -- Fall back to VIRTUAL_ENV env var
-          local env_venv = os.getenv 'VIRTUAL_ENV'
-          if env_venv then
-            return env_venv .. '/bin/python'
-          end
-          -- Last resort
-          return 'python3'
-        end,
+        pythonPath = get_python,
       },
     }
 
