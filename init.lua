@@ -700,26 +700,6 @@ require('lazy').setup({
             end
           end,
           settings = {
-            python = {
-              pythonPath = vim.fn.exepath 'python3',
-            },
-          },
-        },
-        basedpyright = {
-          before_init = function(_, config)
-            local venv = vim.fn.getcwd() .. '/.venv/bin/python'
-            if vim.fn.executable(venv) == 1 then
-              config.settings.python.pythonPath = venv
-            else
-              local env_venv = os.getenv 'VIRTUAL_ENV'
-              if env_venv then
-                config.settings.python.pythonPath = env_venv .. '/bin/python'
-              else
-                config.settings.python.pythonPath = vim.fn.exepath 'python3'
-              end
-            end
-          end,
-          settings = {
             basedpyright = {
               analysis = {
                 autoSearchPaths = true,
