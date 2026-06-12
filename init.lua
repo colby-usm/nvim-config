@@ -2,11 +2,10 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 vim.g.have_nerd_font = true
 
-require 'options'
-require 'keymaps'
-require 'autocmds'
+require 'kickstart.autocmds'
+require 'kickstart.keymaps'
+require 'kickstart.options'
 
--- [[ Install lazy.nvim ]]
 local lazypath = vim.fn.stdpath 'data' .. '/lazy/lazy.nvim'
 if not (vim.uv or vim.loop).fs_stat(lazypath) then
   local lazyrepo = 'https://github.com/folke/lazy.nvim.git'
@@ -19,26 +18,6 @@ vim.opt.rtp:prepend(lazypath)
 
 require('lazy').setup {
   { 'NMAC427/guess-indent.nvim' },
-  {
-    'folke/lazydev.nvim',
-    ft = 'lua',
-    opts = {
-      library = {
-        { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
-      },
-    },
-  },
-  {
-    'folke/tokyonight.nvim',
-    priority = 1000,
-    config = function()
-      require('tokyonight').setup {
-        styles = { comments = { italic = false } },
-      }
-      vim.cmd.colorscheme 'default'
-    end,
-  },
-  { 'folke/todo-comments.nvim', event = 'VimEnter', dependencies = { 'nvim-lua/plenary.nvim' }, opts = { signs = false } },
   { import = 'kickstart.plugins' },
   { import = 'custom.plugins' },
 }
